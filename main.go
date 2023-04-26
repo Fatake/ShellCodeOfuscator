@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/Fatake/ShellCodeOfuscator/coder"
 	"github.com/fatih/color"
@@ -38,7 +38,7 @@ func main() {
 		log.Fatal("[!] Requiere binario, user -h para ver la ayuda")
 	}
 
-	dataFile, err := ioutil.ReadFile(menu.inputFile)
+	dataFile, err := os.ReadFile(menu.inputFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,7 +49,7 @@ func main() {
 	// obs es la variable que contiene el resultado final de la obfuscacion
 	obs := coder.Base32CustomEncoder(string(cifrar))
 
-	ioutil.WriteFile("obs.txt", []byte(obs), 0777)
+	os.WriteFile("obs.txt", []byte(obs), 0777)
 	color.Yellow("[+] Archivo Ofuscado Exitosamente")
 
 }
