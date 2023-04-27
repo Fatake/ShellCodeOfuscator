@@ -2,7 +2,10 @@ package shellcoder
 
 import (
 	"bufio"
+	"crypto/md5"
 	"crypto/rand"
+	"crypto/sha1"
+	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
 	"io"
@@ -66,6 +69,19 @@ func Launch() {
 	config.Bypass = 3
 	config.Format = 1
 	config.Compress = 1
+
+	EntradaData, err := os.ReadFile(*srcFile)
+	if err != nil {
+		log.Fatal("Error reading input file")
+	}
+	color.Blue("[i] Checksum input file: %s", *srcFile)
+	md5 := md5.Sum(EntradaData)
+	sha1 := sha1.Sum(EntradaData)
+	sha256 := sha256.Sum256(EntradaData)
+
+	color.Yellow("[i] md5: %x\n", md5)
+	color.Yellow("[i] sha1: %x\n", sha1)
+	color.Yellow("[i] sha256: %x\n", sha256)
 
 	payload, err := donut.ShellcodeFromFile(*srcFile, config)
 	if err != nil {
