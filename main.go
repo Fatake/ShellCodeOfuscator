@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/Binject/go-donut/donut"
-	"github.com/Fatake/ShellCodeOfuscator/coder"
+	"github.com/Fatake/ShellCodeOfuscator/cipher"
+	"github.com/Fatake/ShellCodeOfuscator/shellcoder"
 	"github.com/fatih/color"
 )
 
@@ -20,7 +21,7 @@ type FlagsType struct {
 	arch      string
 }
 
-var banner = `
+var banner_1 = `
 
 ░█████╗░██████╗░███████╗██╗░░░██╗░██████╗░█████╗░░█████╗░████████╗░█████╗░██████╗░
 ██╔══██╗██╔══██╗██╔════╝██║░░░██║██╔════╝██╔══██╗██╔══██╗╚══██╔══╝██╔══██╗██╔══██╗
@@ -53,7 +54,9 @@ func getdata() ([]byte, *FlagsType) {
 }
 
 func main() {
-	color.Cyan(banner)
+	color.Cyan(banner_1)
+	shellcoder.Launch()
+	os.Exit(1)
 	dataFile, menu := getdata()
 	/*
 		Donut is a position-independent code that enables in-memory execution of
@@ -89,13 +92,13 @@ func main() {
 	}
 
 	readBuf, _ := io.ReadAll(payload)
-	encrypt := coder.XorEncoder(readBuf, 31)
+	encrypt := cipher.XorEncoder(readBuf, 31)
 	key := make([]byte, 32)
 	nonce := make([]byte, 12)
 	rand.Read(key)
 	rand.Read(nonce)
 
-	raw2 := coder.AESEncrypt(encrypt, key, nonce)
+	raw2 := cipher.AESEncrypt(encrypt, key, nonce)
 
 	color.Blue("[i] Realizando proceso de cifrado AES")
 
@@ -110,10 +113,10 @@ func main() {
 	// XOR Part
 	////
 	color.Blue("\n[i] Realizando proceso de cifrado Xor")
-	cifrar := coder.XorEncoder(dataFile, 60)
+	cifrar := cipher.XorEncoder(dataFile, 60)
 
 	// obs es la variable que contiene el resultado final de la obfuscacion
-	obs := coder.Base32CustomEncoder(string(cifrar))
+	obs := cipher.Base32CustomEncoder(string(cifrar))
 
 	os.WriteFile("obs.txt", []byte(obs), 0777)
 	color.Yellow("[+] Archivo Ofuscado Exitosamente")
